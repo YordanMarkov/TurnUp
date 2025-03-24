@@ -4,13 +4,11 @@
 //
 //  Created by Yordan Markov on 24.03.25.
 //
-
-
+ 
 import SwiftUI
 
 public struct SongView: View {
     @StateObject private var viewModel = SongViewModel()
-    @State private var progress: Double = 0.6
 
     public var body: some View {
         ZStack {
@@ -24,7 +22,7 @@ public struct SongView: View {
                 .bold()
                 .font(.system(size: 90, weight: .bold, design: .default))
                 .padding(.top, -375)
-            
+
             RoundedRectangle(cornerRadius: 25, style: .continuous)
                 .fill(.ultraThinMaterial)
                 .frame(width: 350, height: 500)
@@ -32,29 +30,47 @@ public struct SongView: View {
                     RoundedRectangle(cornerRadius: 20, style: .continuous)
                         .stroke(Color.white.opacity(0.2), lineWidth: 1)
                 )
-            
-            Image("GPS")
+
+            Image(viewModel.currentSong.imageName)
                 .resizable()
                 .frame(width: 270, height: 270)
                 .cornerRadius(20)
                 .padding(.top, -150)
-            
-            Text("Lidia, Dessita & Tedi Aleksandrova")
+
+            Text(viewModel.currentSong.artist)
                 .foregroundColor(.black)
                 .bold()
                 .font(.system(size: 15, weight: .bold, design: .default))
                 .padding(.top, 170)
             
-            Text("GPS-A")
+            Text(viewModel.currentSong.name)
                 .foregroundColor(.black)
                 .bold()
                 .font(.system(size: 48, weight: .bold, design: .default))
                 .padding(.top, 260)
+
             
             CustomSlider()
-                .padding(.top, 40)
-                
+                .environmentObject(viewModel)
+                .padding(.top, 50)
         }
+        
+        .contentShape(Rectangle())
+        .gesture(
+            TapGesture().onEnded {
+                viewModel.togglePlayPause()
+            }
+        )
+        
+        .gesture(
+            DragGesture().onEnded { value in
+                if value.translation.width < -50 {
+                    viewModel.nextSong()
+                } else if value.translation.width > 50 {
+                    viewModel.previousSong()
+                }
+            }
+        )
     }
 }
 

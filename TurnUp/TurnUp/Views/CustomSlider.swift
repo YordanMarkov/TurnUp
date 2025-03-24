@@ -1,8 +1,14 @@
+//
+//  CustomSlider.swift
+//  TurnUp
+//
+//  Created by Yordan Markov on 24.03.25.
+//
+
 import SwiftUI
 
 struct CustomSlider: View {
-    @State private var value: CGFloat = 0.6
-
+    @EnvironmentObject var viewModel: SongViewModel
     let barWidth: CGFloat = 300
     let barHeight: CGFloat = 30
 
@@ -15,28 +21,25 @@ struct CustomSlider: View {
 
                 Capsule()
                     .fill(Color(red: 172/255, green: 233/255, blue: 250/255)) // #ACE9FA
-                    .frame(width: barWidth * value, height: barHeight)
+                    .frame(width: barWidth * viewModel.songProgress, height: barHeight)
 
                 Circle()
                     .fill(Color.white)
                     .frame(width: 40, height: 40)
-                    .offset(x: barWidth * value - 12)
+                    .offset(x: barWidth * viewModel.songProgress - 20)
                     .gesture(
                         DragGesture()
                             .onChanged { drag in
                                 let newValue = min(max(0, drag.location.x / barWidth), 1)
-                                value = newValue
+                                viewModel.songProgress = newValue
+                                viewModel.seek(to: newValue)
                             }
                     )
             }
 
-            Text("2:\(String(format: "%02.0f", value * 55))")
+            Text(viewModel.currentDurationLabel)
                 .font(.system(size: 18, weight: .bold))
         }
         .padding(.top, 360)
     }
-}
-
-#Preview {
-    CustomSlider()
 }

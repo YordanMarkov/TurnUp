@@ -1,10 +1,10 @@
 //
-//  SongView 2.swift
+//  SongView.swift
 //  TurnUp
 //
 //  Created by Yordan Markov on 24.03.25.
 //
- 
+
 import SwiftUI
 
 public struct SongView: View {
@@ -37,31 +37,66 @@ public struct SongView: View {
                 .cornerRadius(20)
                 .padding(.top, -150)
 
-            Text(viewModel.currentSong.artist)
-                .foregroundColor(.black)
-                .bold()
-                .font(.system(size: 15, weight: .bold, design: .default))
-                .padding(.top, 170)
-            
-            Text(viewModel.currentSong.name)
-                .foregroundColor(.black)
-                .bold()
-                .font(.system(size: 48, weight: .bold, design: .default))
-                .padding(.top, 260)
+            ScrollingText(
+                text: viewModel.currentSong.artist,
+                fontSize: 15,
+                fontWeight: .bold,
+                width: 300,
+                height: 50
+            )
+            .foregroundColor(.black)
+            .padding(.top, 170)
 
-            
+            ScrollingText(
+                text: viewModel.currentSong.name,
+                fontSize: 48,
+                fontWeight: .bold,
+                width: 300,
+                height: 50
+            )
+            .foregroundColor(.black)
+            .padding(.top, 260)
+
             CustomSlider()
                 .environmentObject(viewModel)
                 .padding(.top, 50)
+
+            if let message = viewModel.statusMessage {
+                ZStack {
+                    VisualEffectBlur(blurStyle: .systemThinMaterialDark)
+                        .ignoresSafeArea()
+                        .opacity(0.8)
+                        .transition(.opacity)
+
+                    Text(message)
+                        .font(.system(size: 28, weight: .bold))
+                        .multilineTextAlignment(.center)
+                        .foregroundColor(.black)
+                        .padding(.horizontal, 32)
+                        .padding(.vertical, 20)
+                        .background(
+                            Color.white
+                                .opacity(0.95)
+                                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                        )
+                        .shadow(radius: 20)
+                        .scaleEffect(1.0)
+                        .transition(.asymmetric(
+                            insertion: .scale(scale: 0.9).combined(with: .opacity),
+                            removal: .scale(scale: 1.1).combined(with: .opacity)
+                        ))
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .zIndex(1)
+            }
         }
-        
+
         .contentShape(Rectangle())
         .gesture(
             TapGesture().onEnded {
                 viewModel.togglePlayPause()
             }
         )
-        
         .gesture(
             DragGesture().onEnded { value in
                 if value.translation.width < -50 {

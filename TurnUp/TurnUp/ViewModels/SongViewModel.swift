@@ -8,14 +8,16 @@
 import Foundation
 import AVFoundation
 import Combine
+import SwiftUI
 
 class SongViewModel: NSObject, ObservableObject, AVAudioPlayerDelegate {
     @Published var currentTime: String = ""
     @Published var currentSongIndex: Int = 0
     @Published var isPlaying: Bool = false
     @Published var currentSong: Song
-    @Published var songProgress: Double = 0.0 // from 0.0 to 1.0
+    @Published var songProgress: Double = 0.0
     @Published var currentDurationLabel: String = "0:00"
+    @Published var statusMessage: String? = nil
 
     private var timer: AnyCancellable?
     private var timeUpdater: AnyCancellable?
@@ -33,6 +35,30 @@ class SongViewModel: NSObject, ObservableObject, AVAudioPlayerDelegate {
         updateTime()
         startClockTimer()
         loadAndPlayCurrentSong()
+    }
+
+    func togglePlayPause() {
+        guard let player = player else { return }
+        if player.isPlaying {
+            player.pause()
+            isPlaying = false
+            showStatus("⏸️ Paused")
+        } else {
+            player.play()
+            isPlaying = true
+            showStatus("▶️ Playing")
+        }
+    }
+
+    private func showStatus(_ message: String) {
+        withAnimation(.easeInOut(duration: 0.2)) {
+            statusMessage = message
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                self.statusMessage = nil
+            }
+        }
     }
 
     private func startClockTimer() {
@@ -69,7 +95,7 @@ class SongViewModel: NSObject, ObservableObject, AVAudioPlayerDelegate {
 
         do {
             player = try AVAudioPlayer(contentsOf: url)
-            player?.delegate = self // ✅ SET THE DELEGATE HERE
+            player?.delegate = self
             player?.prepareToPlay()
             player?.play()
             isPlaying = true
@@ -83,26 +109,19 @@ class SongViewModel: NSObject, ObservableObject, AVAudioPlayerDelegate {
         nextSong()
     }
 
-    func togglePlayPause() {
-        guard let player = player else { return }
-        if player.isPlaying {
-            player.pause()
-            isPlaying = false
-        } else {
-            player.play()
-            isPlaying = true
-        }
-    }
-
     func nextSong() {
-        currentSongIndex = (currentSongIndex + 1) % songs.count
-        currentSong = songs[currentSongIndex]
+        withAnimation(.easeInOut(duration: 0.3)) {
+            currentSongIndex = (currentSongIndex + 1) % songs.count
+            currentSong = songs[currentSongIndex]
+        }
         loadAndPlayCurrentSong()
     }
 
     func previousSong() {
-        currentSongIndex = (currentSongIndex - 1 + songs.count) % songs.count
-        currentSong = songs[currentSongIndex]
+        withAnimation(.easeInOut(duration: 0.3)) {
+            currentSongIndex = (currentSongIndex - 1 + songs.count) % songs.count
+            currentSong = songs[currentSongIndex]
+        }
         loadAndPlayCurrentSong()
     }
 

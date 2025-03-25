@@ -52,6 +52,7 @@ public struct SongView: View {
                 )
                 .foregroundColor(.black)
                 .padding(.top, 170)
+                .id("artist-\(viewModel.currentSong.artist)") // 🔁 Force reload
 
                 ScrollingText(
                     text: viewModel.currentSong.name,
@@ -62,6 +63,7 @@ public struct SongView: View {
                 )
                 .foregroundColor(.black)
                 .padding(.top, 260)
+                .id("title-\(viewModel.currentSong.name)") // 🔁 Force reload
 
                 CustomSlider()
                     .environmentObject(viewModel)

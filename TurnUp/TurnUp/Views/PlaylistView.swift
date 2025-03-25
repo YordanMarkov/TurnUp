@@ -1,5 +1,5 @@
 //
-//  PlaylistsView.swift
+//  PlaylistView.swift
 //  TurnUp
 //
 //  Created by Kalina on 25/03/2025.
@@ -7,69 +7,79 @@
 
 import SwiftUI
 
-struct PlaylistView: View {
-    @ObservedObject var viewModel: SongViewModel
-    @Environment(\.dismiss) var dismiss
+public struct PlaylistView: View {
+    @EnvironmentObject var viewModel: SongViewModel
+    @Binding var showPlaylist: Bool
 
-    var body: some View {
-        ZStack {
-            Image("Background-light")
-                .resizable()
-                .scaledToFill()
-                .ignoresSafeArea()
+    public var body: some View {
+        VStack(spacing: 10) {
+            Text(viewModel.currentPlaylist.name)
+                .font(.largeTitle.bold())
+                .padding(.top, 12)
 
-            VStack(spacing: 12) {
-                Text("Up Next")
-                    .font(.largeTitle.bold())
-                    .padding(.top, 60)
+            ScrollView {
+                VStack(spacing: 20) {
+                    ForEach(viewModel.currentPlaylist.songs.indices, id: \.self) { index in
+                        let song = viewModel.currentPlaylist.songs[index]
+                        HStack {
+                            Image(song.imageName)
+                                .resizable()
+                                .frame(width: 110, height: 110)
+                                .cornerRadius(20)
 
-                ScrollView {
-                    VStack(spacing: 16) {
-                        ForEach(viewModel.songs.indices, id: \.self) { index in
-                            let song = viewModel.songs[index]
-                            HStack {
-                                Image(song.imageName)
-                                    .resizable()
-                                    .frame(width: 50, height: 50)
-                                    .cornerRadius(10)
-
-                                VStack(alignment: .leading) {
-                                    Text(song.name)
-                                        .font(.headline)
-                                    Text(song.artist)
-                                        .font(.subheadline)
-                                        .foregroundColor(.secondary)
-                                }
-
-                                Spacer()
-
-                                if index == viewModel.currentSongIndex {
-                                    Image(systemName: "speaker.wave.2.fill")
-                                        .foregroundColor(.blue)
-                                }
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text(song.name)
+                                    .font(.largeTitle.bold())
+                                Text(song.artist)
+                                    .font(.title2)
+                                    .foregroundColor(.secondary)
                             }
-                            .padding(.horizontal)
-                            .onTapGesture {
-                                viewModel.currentSongIndex = index
-                                viewModel.currentSong = song
-                                viewModel.loadAndPlayCurrentSong()
-                                dismiss()
+
+                            Spacer()
+
+                            if viewModel.currentSongIndex == index && viewModel.currentPlaylist.id == viewModel.selectedPlaylistIndex {
+                                Image(systemName: "speaker.wave.2.fill")
+                                    .foregroundColor(.blue)
+                                    .font(.largeTitle)
+                            }
+                        }
+                        .padding()
+                        .background(
+                            RoundedRectangle(cornerRadius: 25, style: .continuous)
+                                .fill(.ultraThinMaterial)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                        .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                                )
+                        )
+                        .onTapGesture {
+                            viewModel.selectedPlaylistIndex = viewModel.currentPlaylist.id
+                            viewModel.currentSongIndex = index
+                            viewModel.currentSong = song
+                            viewModel.loadAndPlayCurrentSong()
+                            withAnimation {
+                                showPlaylist = false
                             }
                         }
                     }
-                    .padding()
                 }
-
-                Spacer()
+                .padding(.vertical, 10)
+                .padding(.horizontal)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .gesture(
-            DragGesture()
-                .onEnded { value in
-                    if value.translation.height > 50 {
-                        dismiss()
+            DragGesture().onEnded { value in
+                if value.translation.width < -50 {
+                    withAnimation {
+                        viewModel.nextPlaylist()
+                    }
+                } else if value.translation.width > 50 {
+                    withAnimation {
+                        viewModel.previousPlaylist()
                     }
                 }
+            }
         )
     }
 }

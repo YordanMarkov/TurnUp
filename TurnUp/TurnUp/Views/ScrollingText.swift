@@ -13,52 +13,69 @@ struct ScrollingText: View {
     let fontWeight: Font.Weight
     let width: CGFloat
     let height: CGFloat
+    let speed: Double = 20.0 // higher = slower
 
+    @State private var textOffset: CGFloat = 0
     @State private var textWidth: CGFloat = 0
-    @State private var animate = false
-    @State private var ready = false
+    @State private var startAnimation = false
 
     var body: some View {
         ZStack {
-            if ready && textWidth > width {
-                HStack(spacing: 40) {
-                    Text(text)
-                    Text(text)
-                }
-                .font(.system(size: fontSize, weight: fontWeight))
-                .offset(x: animate ? -textWidth - 40 : 0)
-                .onAppear {
-                    animate = true
-                }
-                .animation(
-                    .linear(duration: Double(textWidth) / 30)
-                        .repeatForever(autoreverses: false),
-                    value: animate
-                )
-                .frame(width: width, alignment: .leading)
-                .clipped()
-            } else if ready {
+            HStack(spacing: 0) {
                 Text(text)
                     .font(.system(size: fontSize, weight: fontWeight))
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                    .frame(width: width, height: height, alignment: .center)
+                    .background(
+                        GeometryReader { geo in
+                            Color.clear
+                                .onAppear {
+                                    textWidth = geo.size.width
+                                    textOffset = 0
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                        startMarquee()
+                                    }
+                                }
+                        }
+                    )
+                    .offset(x: textOffset)
+                if textWidth > width {
+                    Text(text)
+                        .font(.system(size: fontSize, weight: fontWeight))
+                        .offset(x: textOffset + textWidth + 40)
+                }
             }
         }
-        .frame(width: width, height: height)
-        .overlay(
-            Text(text)
-                .font(.system(size: fontSize, weight: fontWeight))
-                .fixedSize()
-                .background(
-                    GeometryReader { geo in
-                        Color.clear.onAppear {
-                            textWidth = geo.size.width
-                            ready = true
-                        }
-                    }
-                )
-                .hidden()
+        .frame(width: width, height: height, alignment: .leading)
+        .clipped()
+    }
+
+    private func startMarquee() {
+        guard textWidth > width else { return }
+
+        let totalDistance = textWidth + 40
+        let duration = Double(totalDistance) / speed
+
+        withAnimation(Animation.linear(duration: duration).repeatForever(autoreverses: false)) {
+            textOffset = -totalDistance
+        }
+    }
+}
+#Preview {
+    VStack(spacing: 20) {
+        ScrollingText(
+            text: "Short title",
+            fontSize: 20,
+            fontWeight: .bold,
+            width: 300,
+            height: 30
+        )
+
+        ScrollingText(
+            text: "🚗 This is a long long long song title that will finally scroll like a car's music app should",
+            fontSize: 20,
+            fontWeight: .bold,
+            width: 300,
+            height: 30
         )
     }
+    .padding()
 }

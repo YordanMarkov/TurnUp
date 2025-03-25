@@ -5,10 +5,17 @@
 //  Created by Yordan Markov on 24.03.25.
 //
 
+
 import Foundation
 import AVFoundation
 import Combine
 import SwiftUI
+
+struct Playlist {
+    let id: Int
+    let name: String
+    let songs: [Song]
+}
 
 class SongViewModel: NSObject, ObservableObject, AVAudioPlayerDelegate {
     @Published var currentTime: String = ""
@@ -18,23 +25,35 @@ class SongViewModel: NSObject, ObservableObject, AVAudioPlayerDelegate {
     @Published var songProgress: Double = 0.0
     @Published var currentDurationLabel: String = "0:00"
     @Published var statusMessage: String? = nil
+    @Published var selectedPlaylistIndex: Int = 1
 
     private var timer: AnyCancellable?
     private var timeUpdater: AnyCancellable?
     private var player: AVAudioPlayer?
 
-    let songs: [Song] = [
-        Song(name: "GPS-A", artist: "Lidia, Dessita & Tedi Aleksandrova", fileName: "GPS-A", imageName: "GPSPic"),
-        Song(name: "Neudobni vaprosi", artist: "Galena & Gamzata", fileName: "Neudobni", imageName: "NeudobniPic"),
-        Song(name: "Draskai klechkata", artist: "Tsvetelina Yaneva", fileName: "Draskai", imageName: "DraskaiPic")
+    let playlists: [Playlist] = [
+        Playlist(id: 0, name: "Welcome to Bulgaria", songs: [
+            Song(name: "GPS-A", artist: "Lidia, Dessita & Tedi Aleksandrova", fileName: "GPS-A", imageName: "GPSPic"),
+            Song(name: "Neudobni vaprosi", artist: "Galena & Gamzata", fileName: "Neudobni", imageName: "NeudobniPic"),
+            Song(name: "Draskai klechkata", artist: "Tsvetelina Yaneva", fileName: "Draskai", imageName: "DraskaiPic")
+        ]),
+        Playlist(id: 1, name: "Favorite Pop", songs: [
+            Song(name: "Espresso", artist: "Sabrina Carpenter", fileName: "espresso", imageName: "sabrina"),
+            Song(name: "Side to side", artist: "Ariana Grande, Nicki Minaj", fileName: "side", imageName: "ariana"),
+            Song(name: "CHIHIRO", artist: "Billie Eilish", fileName: "chihiro", imageName: "chihiro")
+        ])
     ]
 
     override init() {
-        currentSong = songs[0]
+        currentSong = playlists[1].songs[0]
         super.init()
         updateTime()
         startClockTimer()
         loadAndPlayCurrentSong()
+    }
+
+    var currentPlaylist: Playlist {
+        playlists[selectedPlaylistIndex]
     }
 
     func togglePlayPause() {
@@ -111,17 +130,31 @@ class SongViewModel: NSObject, ObservableObject, AVAudioPlayerDelegate {
 
     func nextSong() {
         withAnimation(.easeInOut(duration: 0.3)) {
-            currentSongIndex = (currentSongIndex + 1) % songs.count
-            currentSong = songs[currentSongIndex]
+            currentSongIndex = (currentSongIndex + 1) % currentPlaylist.songs.count
+            currentSong = currentPlaylist.songs[currentSongIndex]
         }
         loadAndPlayCurrentSong()
     }
 
     func previousSong() {
         withAnimation(.easeInOut(duration: 0.3)) {
-            currentSongIndex = (currentSongIndex - 1 + songs.count) % songs.count
-            currentSong = songs[currentSongIndex]
+            currentSongIndex = (currentSongIndex - 1 + currentPlaylist.songs.count) % currentPlaylist.songs.count
+            currentSong = currentPlaylist.songs[currentSongIndex]
         }
+        loadAndPlayCurrentSong()
+    }
+
+    func nextPlaylist() {
+        selectedPlaylistIndex = (selectedPlaylistIndex + 1) % playlists.count
+        currentSongIndex = 0
+        currentSong = currentPlaylist.songs[currentSongIndex]
+        loadAndPlayCurrentSong()
+    }
+
+    func previousPlaylist() {
+        selectedPlaylistIndex = (selectedPlaylistIndex - 1 + playlists.count) % playlists.count
+        currentSongIndex = 0
+        currentSong = currentPlaylist.songs[currentSongIndex]
         loadAndPlayCurrentSong()
     }
 

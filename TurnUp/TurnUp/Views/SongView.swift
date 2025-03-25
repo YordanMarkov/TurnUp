@@ -9,6 +9,7 @@ import SwiftUI
 
 public struct SongView: View {
     @StateObject private var viewModel = SongViewModel()
+    @State private var showPlaylist = false
 
     public var body: some View {
         ZStack {
@@ -23,43 +24,49 @@ public struct SongView: View {
                 .font(.system(size: 90, weight: .bold, design: .default))
                 .padding(.top, -375)
 
-            RoundedRectangle(cornerRadius: 25, style: .continuous)
-                .fill(.ultraThinMaterial)
-                .frame(width: 350, height: 500)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .stroke(Color.white.opacity(0.2), lineWidth: 1)
+            if showPlaylist {
+                PlaylistView(showPlaylist: $showPlaylist)
+                    .environmentObject(viewModel)
+                    .padding(.top, 150)
+            } else {
+                RoundedRectangle(cornerRadius: 25, style: .continuous)
+                    .fill(.ultraThinMaterial)
+                    .frame(width: 350, height: 500)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 20, style: .continuous)
+                            .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                    )
+
+                Image(viewModel.currentSong.imageName)
+                    .resizable()
+                    .frame(width: 270, height: 270)
+                    .cornerRadius(20)
+                    .padding(.top, -150)
+
+                ScrollingText(
+                    text: viewModel.currentSong.artist,
+                    fontSize: 15,
+                    fontWeight: .bold,
+                    width: 300,
+                    height: 50
                 )
+                .foregroundColor(.black)
+                .padding(.top, 170)
 
-            Image(viewModel.currentSong.imageName)
-                .resizable()
-                .frame(width: 270, height: 270)
-                .cornerRadius(20)
-                .padding(.top, -150)
+                ScrollingText(
+                    text: viewModel.currentSong.name,
+                    fontSize: 48,
+                    fontWeight: .bold,
+                    width: 300,
+                    height: 50
+                )
+                .foregroundColor(.black)
+                .padding(.top, 260)
 
-            ScrollingText(
-                text: viewModel.currentSong.artist,
-                fontSize: 15,
-                fontWeight: .bold,
-                width: 300,
-                height: 50
-            )
-            .foregroundColor(.black)
-            .padding(.top, 170)
-
-            ScrollingText(
-                text: viewModel.currentSong.name,
-                fontSize: 48,
-                fontWeight: .bold,
-                width: 300,
-                height: 50
-            )
-            .foregroundColor(.black)
-            .padding(.top, 260)
-
-            CustomSlider()
-                .environmentObject(viewModel)
-                .padding(.top, 50)
+                CustomSlider()
+                    .environmentObject(viewModel)
+                    .padding(.top, 50)
+            }
 
             if let message = viewModel.statusMessage {
                 ZStack {
@@ -90,7 +97,6 @@ public struct SongView: View {
                 .zIndex(1)
             }
         }
-
         .contentShape(Rectangle())
         .gesture(
             TapGesture().onEnded {
@@ -99,7 +105,15 @@ public struct SongView: View {
         )
         .gesture(
             DragGesture().onEnded { value in
-                if value.translation.width < -50 {
+                if value.translation.height < -50 {
+                    withAnimation {
+                        showPlaylist = true
+                    }
+                } else if value.translation.height > 50 {
+                    withAnimation {
+                        showPlaylist = false
+                    }
+                } else if value.translation.width < -50 {
                     viewModel.nextSong()
                 } else if value.translation.width > 50 {
                     viewModel.previousSong()

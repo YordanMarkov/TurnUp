@@ -10,46 +10,28 @@ import SwiftUI
 public struct SongView: View {
     @StateObject private var viewModel = SongViewModel()
     @State private var showPlaylist = false
-    @State private var isDarkMode = false
+    @StateObject private var brightnessObserver = BrightnessObserver()
 
     public var body: some View {
         ZStack {
-            Image(isDarkMode ? "Background-dark" : "Background-light")
+            Image(brightnessObserver.isDarkMode ? "Background-dark" : "Background-light")
                 .resizable()
                 .scaledToFill()
                 .ignoresSafeArea()
+                .animation(.easeInOut(duration: 0.4), value: brightnessObserver.isDarkMode)
 
-            VStack {
-                HStack {
-                    Text(viewModel.currentTime)
-                        .foregroundColor(isDarkMode ? .white : .black)
-                        .bold()
-                        .font(.system(size: 90, weight: .bold, design: .default))
-                        .padding(.leading)
-
-                    Spacer()
-
-                    Button(action: {
-                        withAnimation {
-                            isDarkMode.toggle()
-                        }
-                    }) {
-                        Image(systemName: isDarkMode ? "sun.max.fill" : "moon.fill")
-                            .font(.system(size: 32))
-                            .foregroundColor(isDarkMode ? .yellow : .blue)
-                            .padding()
-                    }
-                }
-                .padding(.top, 30)
-                .padding(.horizontal)
-
-                Spacer()
-            }
+            Text(viewModel.currentTime)
+                .foregroundColor(brightnessObserver.isDarkMode ? .white : .black)
+                .animation(.easeInOut(duration: 0.4), value: brightnessObserver.isDarkMode)
+                .bold()
+                .font(.system(size: 90, weight: .bold, design: .default))
+                .padding(.top, -400)
 
             if showPlaylist {
-                PlaylistView(showPlaylist: $showPlaylist, isDarkMode: isDarkMode)
+                PlaylistView(showPlaylist: $showPlaylist, isDarkMode: brightnessObserver.isDarkMode)
                     .environmentObject(viewModel)
                     .padding(.top, 150)
+                    .animation(.easeInOut(duration: 0.4), value: brightnessObserver.isDarkMode)
             } else {
                 RoundedRectangle(cornerRadius: 25, style: .continuous)
                     .fill(.ultraThinMaterial)
@@ -58,12 +40,14 @@ public struct SongView: View {
                         RoundedRectangle(cornerRadius: 20, style: .continuous)
                             .stroke(Color.white.opacity(0.2), lineWidth: 1)
                     )
+                    .animation(.easeInOut(duration: 0.4), value: brightnessObserver.isDarkMode)
 
                 Image(viewModel.currentSong.imageName)
                     .resizable()
                     .frame(width: 270, height: 270)
                     .cornerRadius(20)
                     .padding(.top, -150)
+                    .animation(.easeInOut(duration: 0.4), value: brightnessObserver.isDarkMode)
 
                 ScrollingText(
                     text: viewModel.currentSong.artist,
@@ -72,7 +56,8 @@ public struct SongView: View {
                     width: 300,
                     height: 50
                 )
-                .foregroundColor(isDarkMode ? .white : .black)
+                .foregroundColor(brightnessObserver.isDarkMode ? .white : .black)
+                .animation(.easeInOut(duration: 0.4), value: brightnessObserver.isDarkMode)
                 .padding(.top, 170)
                 .id("artist-\(viewModel.currentSong.artist)")
 
@@ -83,14 +68,15 @@ public struct SongView: View {
                     width: 300,
                     height: 50
                 )
-                .foregroundColor(isDarkMode ? .white : .black)
+                .foregroundColor(brightnessObserver.isDarkMode ? .white : .black)
+                .animation(.easeInOut(duration: 0.4), value: brightnessObserver.isDarkMode)
                 .padding(.top, 260)
                 .id("title-\(viewModel.currentSong.name)")
 
-                CustomSlider(isDarkMode: isDarkMode)
+                CustomSlider(isDarkMode: brightnessObserver.isDarkMode)
                     .environmentObject(viewModel)
                     .padding(.top, 50)
-
+                    .animation(.easeInOut(duration: 0.4), value: brightnessObserver.isDarkMode)
             }
 
             if let message = viewModel.statusMessage {

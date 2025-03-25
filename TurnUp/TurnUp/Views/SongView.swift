@@ -10,22 +10,44 @@ import SwiftUI
 public struct SongView: View {
     @StateObject private var viewModel = SongViewModel()
     @State private var showPlaylist = false
+    @State private var isDarkMode = false
 
     public var body: some View {
         ZStack {
-            Image("Background-light")
+            Image(isDarkMode ? "Background-dark" : "Background-light")
                 .resizable()
                 .scaledToFill()
                 .ignoresSafeArea()
 
-            Text(viewModel.currentTime)
-                .foregroundColor(.black)
-                .bold()
-                .font(.system(size: 90, weight: .bold, design: .default))
-                .padding(.top, -375)
+            VStack {
+                HStack {
+                    Text(viewModel.currentTime)
+                        .foregroundColor(isDarkMode ? .white : .black)
+                        .bold()
+                        .font(.system(size: 90, weight: .bold, design: .default))
+                        .padding(.leading)
+
+                    Spacer()
+
+                    Button(action: {
+                        withAnimation {
+                            isDarkMode.toggle()
+                        }
+                    }) {
+                        Image(systemName: isDarkMode ? "sun.max.fill" : "moon.fill")
+                            .font(.system(size: 32))
+                            .foregroundColor(isDarkMode ? .yellow : .blue)
+                            .padding()
+                    }
+                }
+                .padding(.top, 30)
+                .padding(.horizontal)
+
+                Spacer()
+            }
 
             if showPlaylist {
-                PlaylistView(showPlaylist: $showPlaylist)
+                PlaylistView(showPlaylist: $showPlaylist, isDarkMode: isDarkMode)
                     .environmentObject(viewModel)
                     .padding(.top, 150)
             } else {
@@ -50,9 +72,9 @@ public struct SongView: View {
                     width: 300,
                     height: 50
                 )
-                .foregroundColor(.black)
+                .foregroundColor(isDarkMode ? .white : .black)
                 .padding(.top, 170)
-                .id("artist-\(viewModel.currentSong.artist)") // 🔁 Force reload
+                .id("artist-\(viewModel.currentSong.artist)")
 
                 ScrollingText(
                     text: viewModel.currentSong.name,
@@ -61,13 +83,14 @@ public struct SongView: View {
                     width: 300,
                     height: 50
                 )
-                .foregroundColor(.black)
+                .foregroundColor(isDarkMode ? .white : .black)
                 .padding(.top, 260)
-                .id("title-\(viewModel.currentSong.name)") // 🔁 Force reload
+                .id("title-\(viewModel.currentSong.name)")
 
-                CustomSlider()
+                CustomSlider(isDarkMode: isDarkMode)
                     .environmentObject(viewModel)
                     .padding(.top, 50)
+
             }
 
             if let message = viewModel.statusMessage {

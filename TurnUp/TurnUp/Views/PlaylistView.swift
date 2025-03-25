@@ -10,11 +10,13 @@ import SwiftUI
 public struct PlaylistView: View {
     @EnvironmentObject var viewModel: SongViewModel
     @Binding var showPlaylist: Bool
+    var isDarkMode: Bool = false
 
     public var body: some View {
         VStack(spacing: 10) {
             Text(viewModel.currentPlaylist.name)
                 .font(.largeTitle.bold())
+                .foregroundColor(isDarkMode ? .white : .black)
                 .padding(.top, 12)
 
             ScrollView {
@@ -30,9 +32,11 @@ public struct PlaylistView: View {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text(song.name)
                                     .font(.largeTitle.bold())
+                                    .foregroundColor(isDarkMode ? .white : .black)
+
                                 Text(song.artist)
                                     .font(.title2)
-                                    .foregroundColor(.secondary)
+                                    .foregroundColor(isDarkMode ? .white.opacity(0.7) : .secondary)
                             }
 
                             Spacer()

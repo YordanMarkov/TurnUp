@@ -135,6 +135,9 @@ public struct SongView: View {
                 }
             }
         )
+        .onAppear {
+            viewModel.startListening()
+        }
     }
 }
 

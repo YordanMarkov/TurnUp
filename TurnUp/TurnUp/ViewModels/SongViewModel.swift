@@ -5,11 +5,11 @@
 //  Created by Yordan Markov on 24.03.25.
 //
 
-
 import Foundation
 import AVFoundation
 import Combine
 import SwiftUI
+import Speech
 
 struct Playlist {
     let id: Int
@@ -30,6 +30,11 @@ class SongViewModel: NSObject, ObservableObject, AVAudioPlayerDelegate {
     private var timer: AnyCancellable?
     private var timeUpdater: AnyCancellable?
     private var player: AVAudioPlayer?
+
+    private let speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
+    private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
+    private var recognitionTask: SFSpeechRecognitionTask?
+    private let audioEngine = AVAudioEngine()
 
     let playlists: [Playlist] = [
         Playlist(id: 0, name: "Welcome to Bulgaria", songs: [
@@ -167,5 +172,97 @@ class SongViewModel: NSObject, ObservableObject, AVAudioPlayerDelegate {
         let minutes = Int(time) / 60
         let seconds = Int(time) % 60
         return String(format: "%d:%02d", minutes, seconds)
+    }
+
+    // Voice commands (Yordan, 26.03.2025 - stop, play, next, back)
+    func startListening() {
+        SFSpeechRecognizer.requestAuthorization { authStatus in
+            DispatchQueue.main.async {
+                if authStatus == .authorized {
+                    self.beginRecognition()
+                } else {
+                    self.showStatus("🎤 Permission denied")
+                }
+            }
+        }
+    }
+
+    private func beginRecognition() {
+        if audioEngine.isRunning {
+            audioEngine.stop()
+            audioEngine.inputNode.removeTap(onBus: 0)
+        }
+        
+        recognitionTask?.cancel()
+        recognitionTask = nil
+
+        recognitionRequest = SFSpeechAudioBufferRecognitionRequest()
+        guard let recognitionRequest = recognitionRequest else {
+            print("Unable to create request")
+            return
+        }
+        recognitionRequest.shouldReportPartialResults = true
+
+        let session = AVAudioSession.sharedInstance()
+        do {
+            try session.setCategory(.playAndRecord, mode: .default, options: [.duckOthers, .defaultToSpeaker])
+            try session.setActive(true, options: .notifyOthersOnDeactivation)
+        } catch {
+            print("❌ AVAudioSession setup failed: \(error.localizedDescription)")
+            return
+        }
+
+        let inputNode = audioEngine.inputNode
+        let recordingFormat = inputNode.inputFormat(forBus: 0)
+        inputNode.removeTap(onBus: 0)
+        inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { buffer, _ in
+            self.recognitionRequest?.append(buffer)
+        }
+
+        recognitionTask = speechRecognizer?.recognitionTask(with: recognitionRequest) { result, error in
+            if let result = result {
+                let spokenText = result.bestTranscription.segments.last?.substring.lowercased() ?? ""
+                print("Heard: \(spokenText)")
+
+                if spokenText.contains("stop") {
+                    if self.isPlaying {
+                        self.togglePlayPause()
+                    }
+                } else if spokenText.contains("play") || spokenText.contains("continue") {
+                    if !self.isPlaying {
+                        self.togglePlayPause()
+                    }
+                } else if spokenText.contains("next") {
+                    self.nextSong()
+                } else if spokenText.contains("back") || spokenText.contains("previous") {
+                    self.previousSong()
+                }
+            }
+
+            if error != nil || (result?.isFinal ?? false) {
+                self.audioEngine.stop()
+                self.audioEngine.inputNode.removeTap(onBus: 0)
+
+                self.recognitionRequest?.endAudio()
+                self.recognitionRequest = nil
+                self.recognitionTask?.cancel()
+                self.recognitionTask = nil
+
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    if !self.audioEngine.isRunning {
+                        self.beginRecognition()
+                    }
+                }
+            }
+        }
+
+
+        audioEngine.prepare()
+        do {
+            try audioEngine.start()
+            print("🎧 Listening...")
+        } catch {
+            print("❌ Audio Engine couldn't start: \(error.localizedDescription)")
+        }
     }
 }

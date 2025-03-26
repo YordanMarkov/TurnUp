@@ -15,11 +15,21 @@ public struct PlaylistView: View {
     public var body: some View {
         ScrollView {
             VStack(spacing: 20) {
-                Text(viewModel.currentPlaylist.name)
-                    .font(.largeTitle.bold())
-                    .foregroundColor(isDarkMode ? .white : .black)
-                    .padding(.top, 40)
-                    .animation(.easeInOut(duration: 0.4), value: isDarkMode)
+                HStack {
+                    Image("Arrow")
+                        .rotationEffect(.degrees(90))
+                    Spacer()
+                    Text(viewModel.currentPlaylist.name)
+                        .font(.largeTitle.bold())
+                        .foregroundColor(isDarkMode ? .white : .black)
+                        .animation(.easeInOut(duration: 0.4), value: isDarkMode)
+                        .multilineTextAlignment(.center)
+                    Spacer()
+                    Image("Arrow")
+                        .rotationEffect(.degrees(-90))
+                }
+                .padding(.top, 40)
+                .padding(.bottom, 40)
 
                 ForEach(viewModel.currentPlaylist.songs.indices, id: \.self) { index in
                     let song = viewModel.currentPlaylist.songs[index]

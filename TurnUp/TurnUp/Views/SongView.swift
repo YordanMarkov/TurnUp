@@ -77,6 +77,10 @@ public struct SongView: View {
                     .environmentObject(viewModel)
                     .padding(.top, 50)
                     .animation(.easeInOut(duration: 0.4), value: brightnessObserver.isDarkMode)
+                
+                Image("Arrow")
+                    .rotationEffect(.degrees(180))
+                    .padding(.top, 670)
             }
 
             if let message = viewModel.statusMessage {

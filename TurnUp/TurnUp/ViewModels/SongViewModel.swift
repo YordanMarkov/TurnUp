@@ -1,9 +1,4 @@
-//
-//  SongViewModel.swift
-//  TurnUp
-//
-//  Created by Yordan Markov on 24.03.25.
-//
+// Updated SongViewModel: auto-cancel if no song/playlist is detected within 5 seconds
 
 import Foundation
 import AVFoundation
@@ -36,7 +31,11 @@ class SongViewModel: NSObject, ObservableObject, AVAudioPlayerDelegate {
     private var recognitionTask: SFSpeechRecognitionTask?
     private let audioEngine = AVAudioEngine()
 
-    let playlists: [Playlist] = [
+    private var isListeningForTitle = false
+    private var collectedTitleWords: [String] = []
+    private var titleListeningTimer: Timer?
+
+    private(set) var playlists: [Playlist] = [
         Playlist(id: 0, name: "Welcome to Bulgaria", songs: [
             Song(name: "GPS-A", artist: "Lidia, Dessita & Tedi Aleksandrova", fileName: "GPS-A", imageName: "GPSPic"),
             Song(name: "Neudobni vaprosi", artist: "Galena & Gamzata", fileName: "Neudobni", imageName: "NeudobniPic"),
@@ -45,9 +44,15 @@ class SongViewModel: NSObject, ObservableObject, AVAudioPlayerDelegate {
         Playlist(id: 1, name: "Favorite Pop", songs: [
             Song(name: "Espresso", artist: "Sabrina Carpenter", fileName: "espresso", imageName: "sabrina"),
             Song(name: "Side to side", artist: "Ariana Grande, Nicki Minaj", fileName: "side", imageName: "ariana"),
-            Song(name: "CHIHIRO", artist: "Billie Eilish", fileName: "chihiro", imageName: "chihiro")
+            Song(name: "LUNCH", artist: "Billie Eilish", fileName: "lunch", imageName: "chihiro")
         ])
     ]
+
+    private let secretPlaylist = Playlist(id: 99, name: "Party Mode 🎉", songs: [
+        Song(name: "Fireball", artist: "Pitbull, John Ryan", fileName: "fireball", imageName: "fireball"),
+        Song(name: "Gasolina", artist: "Daddy Yankee", fileName: "gasolina", imageName: "gasolina"),
+        Song(name: "Rock this party", artist: "Bob Sinclar", fileName: "rock", imageName: "rock")
+    ])
 
     override init() {
         currentSong = playlists[1].songs[0]
@@ -174,7 +179,17 @@ class SongViewModel: NSObject, ObservableObject, AVAudioPlayerDelegate {
         return String(format: "%d:%02d", minutes, seconds)
     }
 
-    // Voice commands (Yordan, 26.03.2025 - stop, play, next, back)
+    func unlockSecretPlaylist() {
+        if !playlists.contains(where: { $0.id == secretPlaylist.id }) {
+            playlists.append(secretPlaylist)
+            selectedPlaylistIndex = playlists.count - 1
+            currentSongIndex = 0
+            currentSong = secretPlaylist.songs[0]
+            loadAndPlayCurrentSong()
+            showStatus("🎉 Party Mode Activated!")
+        }
+    }
+
     func startListening() {
         SFSpeechRecognizer.requestAuthorization { authStatus in
             DispatchQueue.main.async {
@@ -187,20 +202,46 @@ class SongViewModel: NSObject, ObservableObject, AVAudioPlayerDelegate {
         }
     }
 
+    private func findMatchingPlaylist(from words: [String]) -> Playlist? {
+        for word in words {
+            if let match = playlists.first(where: { $0.name.lowercased().contains(word.lowercased()) }) {
+                return match
+            }
+        }
+        return nil
+    }
+
+    private func findMatchingSong(from words: [String]) -> Song? {
+        for word in words {
+            if let match = currentPlaylist.songs.first(where: { $0.name.lowercased().contains(word.lowercased()) }) {
+                return match
+            }
+        }
+        return nil
+    }
+
+    private func cancelTitleListeningIfInactive() {
+        titleListeningTimer?.invalidate()
+        titleListeningTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: false) { _ in
+            if self.isListeningForTitle {
+                self.isListeningForTitle = false
+                self.collectedTitleWords = []
+                self.showStatus("⚠️ Nothing recognized")
+            }
+        }
+    }
+
     private func beginRecognition() {
         if audioEngine.isRunning {
             audioEngine.stop()
             audioEngine.inputNode.removeTap(onBus: 0)
         }
-        
+
         recognitionTask?.cancel()
         recognitionTask = nil
 
         recognitionRequest = SFSpeechAudioBufferRecognitionRequest()
-        guard let recognitionRequest = recognitionRequest else {
-            print("Unable to create request")
-            return
-        }
+        guard let recognitionRequest = recognitionRequest else { return }
         recognitionRequest.shouldReportPartialResults = true
 
         let session = AVAudioSession.sharedInstance()
@@ -224,25 +265,53 @@ class SongViewModel: NSObject, ObservableObject, AVAudioPlayerDelegate {
                 let spokenText = result.bestTranscription.segments.last?.substring.lowercased() ?? ""
                 print("Heard: \(spokenText)")
 
-                if spokenText.contains("stop") {
-                    if self.isPlaying {
-                        self.togglePlayPause()
+                if self.isListeningForTitle {
+                    self.cancelTitleListeningIfInactive()
+
+                    self.collectedTitleWords.append(spokenText)
+
+                    if let playlist = self.findMatchingPlaylist(from: self.collectedTitleWords) {
+                        self.selectedPlaylistIndex = self.playlists.firstIndex(where: { $0.id == playlist.id }) ?? 0
+                        self.currentSongIndex = 0
+                        self.currentSong = playlist.songs[0]
+                        self.loadAndPlayCurrentSong()
+                        self.showStatus("📻 Playing \(playlist.name)")
+                        self.isListeningForTitle = false
+                        self.collectedTitleWords = []
+                        return
                     }
-                } else if spokenText.contains("play") || spokenText.contains("continue") {
-                    if !self.isPlaying {
-                        self.togglePlayPause()
+
+                    if let song = self.findMatchingSong(from: self.collectedTitleWords) {
+                        self.currentSong = song
+                        self.loadAndPlayCurrentSong()
+                        self.showStatus("▶️ \(song.name)")
+                        self.isListeningForTitle = false
+                        self.collectedTitleWords = []
+                        return
                     }
-                } else if spokenText.contains("next") {
-                    self.nextSong()
-                } else if spokenText.contains("back") || spokenText.contains("previous") {
-                    self.previousSong()
+                } else {
+                    if spokenText.contains("stop") {
+                        if self.isPlaying { self.togglePlayPause() }
+                    } else if spokenText.contains("next") {
+                        self.nextSong()
+                    } else if spokenText.contains("back") || spokenText.contains("previous") {
+                        self.previousSong()
+                    } else if spokenText.contains("party") {
+                        self.unlockSecretPlaylist()
+                    } else if spokenText == "play" {
+                        self.isListeningForTitle = true
+                        self.collectedTitleWords = []
+                        self.cancelTitleListeningIfInactive()
+                        self.showStatus("🎤 Say the song or playlist name...")
+                    } else if spokenText.contains("continue") || spokenText.contains("start") {
+                        if !self.isPlaying { self.togglePlayPause() }
+                    }
                 }
             }
 
             if error != nil || (result?.isFinal ?? false) {
                 self.audioEngine.stop()
                 self.audioEngine.inputNode.removeTap(onBus: 0)
-
                 self.recognitionRequest?.endAudio()
                 self.recognitionRequest = nil
                 self.recognitionTask?.cancel()
@@ -255,7 +324,6 @@ class SongViewModel: NSObject, ObservableObject, AVAudioPlayerDelegate {
                 }
             }
         }
-
 
         audioEngine.prepare()
         do {

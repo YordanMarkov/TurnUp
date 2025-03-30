@@ -21,7 +21,7 @@ public struct PlaylistView: View {
                         viewModel.previousPlaylist()
                     }
                 }) {
-                    Image("Arrow")
+                    Image(isDarkMode ? "dark arrow" : "Arrow")
                         .rotationEffect(.degrees(90))
                 }
                 .buttonStyle(ArrowButtonStyle())
@@ -41,7 +41,7 @@ public struct PlaylistView: View {
                         viewModel.nextPlaylist()
                     }
                 }) {
-                    Image("Arrow")
+                    Image(isDarkMode ? "dark arrow" : "Arrow")
                         .rotationEffect(.degrees(-90))
                 }
                 .buttonStyle(ArrowButtonStyle())

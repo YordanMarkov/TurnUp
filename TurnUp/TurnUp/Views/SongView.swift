@@ -83,7 +83,7 @@ public struct SongView: View {
                         showPlaylist = true
                     }
                 }) {
-                    Image("Arrow")
+                    Image(brightnessObserver.isDarkMode ? "dark arrow" : "Arrow")
                         .rotationEffect(.degrees(180))
                 }
                 .buttonStyle(PlainButtonStyle())

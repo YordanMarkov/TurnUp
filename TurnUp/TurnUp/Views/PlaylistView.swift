@@ -105,8 +105,11 @@ public struct PlaylistView: View {
                 .padding(.bottom, 20)
                 .padding(.horizontal)
             }
-            .gesture(
-                DragGesture().onEnded { value in
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .gesture(
+            DragGesture(minimumDistance: 30)
+                .onEnded { value in
                     if value.translation.width < -50 {
                         withAnimation {
                             viewModel.nextPlaylist()
@@ -117,9 +120,7 @@ public struct PlaylistView: View {
                         }
                     }
                 }
-            )
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        )
     }
 }
 

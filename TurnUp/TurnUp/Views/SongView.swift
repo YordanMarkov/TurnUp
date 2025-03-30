@@ -78,9 +78,16 @@ public struct SongView: View {
                     .padding(.top, 50)
                     .animation(.easeInOut(duration: 0.4), value: brightnessObserver.isDarkMode)
                 
-                Image("Arrow")
-                    .rotationEffect(.degrees(180))
-                    .padding(.top, 670)
+                Button(action: {
+                    withAnimation {
+                        showPlaylist = true
+                    }
+                }) {
+                    Image("Arrow")
+                        .rotationEffect(.degrees(180))
+                }
+                .buttonStyle(PlainButtonStyle())
+                .padding(.top, 670)
             }
 
             if let message = viewModel.statusMessage {

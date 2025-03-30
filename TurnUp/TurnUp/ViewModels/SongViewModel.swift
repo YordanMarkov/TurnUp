@@ -290,9 +290,9 @@ class SongViewModel: NSObject, ObservableObject, AVAudioPlayerDelegate {
                         return
                     }
                 } else {
-                    if spokenText.contains("stop") {
+                    if spokenText.contains("stop") || spokenText.contains("pause") {
                         if self.isPlaying { self.togglePlayPause() }
-                    } else if spokenText.contains("next") {
+                    } else if spokenText.contains("next") || spokenText.contains("skip") {
                         self.nextSong()
                     } else if spokenText.contains("back") || spokenText.contains("previous") {
                         self.previousSong()
@@ -303,7 +303,7 @@ class SongViewModel: NSObject, ObservableObject, AVAudioPlayerDelegate {
                         self.collectedTitleWords = []
                         self.cancelTitleListeningIfInactive()
                         self.showStatus("🎤 Say the song or playlist name...")
-                    } else if spokenText.contains("continue") || spokenText.contains("start") {
+                    } else if spokenText.contains("continue") || spokenText.contains("start") || spokenText.contains("resume") {
                         if !self.isPlaying { self.togglePlayPause() }
                     }
                 }

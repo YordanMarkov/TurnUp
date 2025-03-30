@@ -99,7 +99,7 @@ Throughout the develop and define phases of the project, several future implemen
 
 ---
 
-## 👥 Team
+## Team
 
 - **Kalina Bacheva**  
   Student Number: 5165067
@@ -109,6 +109,6 @@ Throughout the develop and define phases of the project, several future implemen
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the [MIT License](LICENSE). See the `LICENSE` file for more details.

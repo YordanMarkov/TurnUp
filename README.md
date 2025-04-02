@@ -77,7 +77,7 @@ https://git.fhict.nl/I524517/turnup
 3. Open a terminal and navigate to the desired directory.
 4. to clone the project, use this command 
 ```bash
-   git clone https://git.fhict.nl/I524517/turnup
+   git clone https://github.com/YordanMarkov/TurnUp
    ```
 5. Now you can open the project in XCode and see it in the preview, or build it on your device.
 
